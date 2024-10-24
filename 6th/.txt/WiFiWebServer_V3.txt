@@ -1,0 +1,79 @@
+#include<ESP8266WiFi.h>
+#include<WiFiClient.h>
+#include<ESP8266WebServer.h>
+
+char AP_SSID[] = "";
+char AP_PW[] = "";
+
+ESP8266WebServer server(80);
+
+const int LED = 16;
+String s, s_head;
+
+void handleRoot() {
+  s = s_head + "<H1>LED 켜짐</H1><BR>";
+  server.send(200, "text/html", s);
+  digitalWrite(LED, LOW);
+}
+
+void handleNotFound() {
+  String message = "File Not Found\n\n";
+  server.send(404, "text/plain", message);
+}
+
+
+void conn_wifi() {
+  WiFi.mode(WIFI_STA);
+
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(AP_SSID);
+
+  // Wi-Fi 연결 시도
+  WiFi.begin(AP_SSID, AP_PW);
+  
+  // Wi-Fi 접속 되었는지 검사
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("Connected to ");
+  Serial.println(AP_SSID);
+
+  // Print the IP Address
+  Serial.print("IP Address : ");
+  Serial.println(WiFi.localIP());
+}
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
+  
+  Serial.begin(9600);
+
+  conn_wifi();
+  
+  s_head = "<META name='viewport' content='width=device-width, initial-scale=1.0'/>";
+  s_head = s_head + "<META http-equiv='Content-Type' content='text/html:charset=utf-8' />";
+
+  server.on("/", handleRoot);
+
+  server.on("/inline", []() {
+    s = s_head + "<H1>LED 꺼짐</H1><BR>";
+    server.send(200, "text/html", s);
+    digitalWrite(LED, HIGH);
+  });
+  
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("HTTP Server Started");
+}
+
+void loop() {
+  server.handleClient();
+}
+

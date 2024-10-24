@@ -1,0 +1,60 @@
+#include <ESP8266WiFi.h>
+
+char AP_SSID[] = "22730024"; 
+char AP_PW[] = "12345678";
+
+WiFiServer server(80);
+// 웹 서버를 만들어주는 개체 생성
+//서버 개체를 생성하기 위해서는 매개변수로 사비스 포트번호를 지정해줘야 한다.
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);                        
+
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(AP_SSID);
+
+  WiFi.begin(AP_SSID, AP_PW);
+
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("Connected to ");
+  Serial.println(AP_SSID);
+
+  Serial.print("IP Address : ");
+  Serial.println(WiFi.localIP());
+
+  server.begin();
+  Serial.println("Server Started");
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  WiFiClient client = server.available();  
+
+  if(!client) {
+    return; 
+  }
+
+  Serial.println("new client");
+
+  String req = client.readStringUntil('\r');
+
+  Serial.println(req);
+  client.flush();
+
+  String s = "<HTML>";
+  s = s + "<META name='viewport' content='width=device-width, initial-scale=1.0'/>";
+  s = s + "<META http-equiv='Content-Type' content='text/html:charset=utf-8' />";
+  s = s + "<HEAD></HEAD><BODY>안녕하세요!</BODY></HTML>";
+
+  client.print(s);
+  delay(1);
+  Serial.println("Client Disconnected");
+}

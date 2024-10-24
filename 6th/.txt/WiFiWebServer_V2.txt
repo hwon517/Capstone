@@ -1,0 +1,101 @@
+#include <ESP8266WiFi.h>
+
+#define PIN_LED D2  //상수 정의
+
+char AP_SSID[] = "";
+char AP_PW[] = "";
+String msg;
+
+WiFiServer server(80);
+
+void setup() {
+  // put your setup code here, to run once:
+
+  pinMode(PIN_LED, OUTPUT);  //  핀모드-입출력 
+  digitalWrite(PIN_LED, HIGH);  //LED소등
+
+  Serial.begin(9600);
+
+  WiFi.mode(WIFI_STA);
+
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(AP_SSID);
+
+  // Wi-Fi 연결 시도
+  WiFi.begin(AP_SSID, AP_PW);
+  
+  // Wi-Fi 접속 되었는지 검사
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  // Wi-Fi 상태 중 연결 성공
+  Serial.println();
+  Serial.println("Connected to ");
+  Serial.println(AP_SSID);
+
+  // Print the IP Address
+  Serial.print("IP Address : ");
+  Serial.println(WiFi.localIP());
+
+  // String the Server
+  server.begin();
+  Serial.println("Server Started");
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  WiFiClient client = server.available();  
+
+  if(!client) {
+    return;                                 // Client가 접속 실패 시 return
+  }
+
+  // Wait until the Client sends some data
+  Serial.println("new client");
+
+  String request = client.readStringUntil('\r');  
+  // Serial.print("Request : ");
+  // Serial.println(request);
+
+  if(request.indexOf("/ledoff") != -1) {
+    digitalWrite(PIN_LED, HIGH);
+  }
+  else if(request.indexOf("/ledon") != -1) {
+    digitalWrite(PIN_LED, LOW);
+  }
+  else {
+    // Serial.println("invalid request");
+    if(digitalRead(PIN_LED)) {
+      digitalWrite(PIN_LED, HIGH);
+    }
+    else {
+      digitalWrite(PIN_LED, LOW);
+    }
+  }
+
+  msg = "<HTML>";
+  msg = msg + "<META name='viewport' content='width=device-width, initial-scale=1.0'/>";
+  msg = msg + "<META http-equiv='Content-Type' content='text/html:charset=utf-8' />";
+  msg = msg + "<BODY>";
+  msg = msg + "<H2>My LED Control Page</H2>";
+  msg = msg + "<A href='/ledon'>LED ON</A>";
+  msg = msg + "<BR>";
+  msg = msg + "<A href='/ledoff'>LED OFF</A>";
+  msg = msg + "<BR>";
+  msg = msg + "LED Status : ";
+  if(digitalRead(PIN_LED)) {
+    msg = msg + "OFF";
+  }
+  else {
+    msg = msg + "ON";
+  }
+  msg = msg + "</BODY>";
+  msg = msg + "</HTML>";
+
+  client.print(msg);
+  //Serial.println("Client Disconnected");
+}

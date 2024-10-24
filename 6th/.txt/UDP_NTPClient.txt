@@ -1,0 +1,42 @@
+#include <ESP8266WiFi.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+
+char SSID[] = "";
+char PW[] = "";
+
+WiFiUDP ntpUDP; 
+NTPClient timeClient(ntpUDP, "kr.pool.ntp.org", 32400);
+
+void setup() {
+  // put your setup code here, to run once:
+
+  Serial.begin(9600);
+
+  WiFi.mode(WIFI_STA);
+
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(SSID);
+
+  WiFi.begin(SSID, PW);
+
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("WiFi Connected");
+
+  timeClient.begin(); 
+}
+
+void loop() {
+  // put your main code here, to run repeatedly
+
+  timeClient.update();
+
+  Serial.println(timeClient.getFormattedTime());
+  delay(1000);
+}

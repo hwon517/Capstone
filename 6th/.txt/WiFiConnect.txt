@@ -1,0 +1,44 @@
+#include <ESP8266WiFi.h>
+
+char SSID[] = "";
+char PW[] = "";
+
+void setup() {
+  // put your setup code here, to run once:
+
+  Serial.begin(9600);
+
+  WiFi.mode(WIFI_STA);
+
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(SSID);
+
+  WiFi.begin(SSID, PW);
+
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("WiFi Connected");
+
+  Serial.print("Connected to SSID : ");
+  Serial.println(WiFi.SSID());
+
+  Serial.print("IP address allotted to ESP : ");
+  Serial.println(WiFi.localIP());
+
+  Serial.print("Gateway allotted to ESP : ");
+  Serial.println(WiFi.gatewayIP());
+
+  delay(5000);
+  WiFi.disconnect();
+  Serial.print("Good Bye!!!");
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+}
