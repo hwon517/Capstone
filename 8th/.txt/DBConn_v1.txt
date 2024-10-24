@@ -1,0 +1,10 @@
+const mongoose = require("mongoose");
+const MONGODB_URL = "";
+mongoose
+  .connect(MONGODB_URL)
+  .then(() => {
+        console.log("Connected to database!")
+    })
+  .catch(() => {
+    console.log("Connection failed...");
+    })
