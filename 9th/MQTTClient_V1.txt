@@ -1,0 +1,112 @@
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
+// Wi-Fi 접속정보
+const char* ssid = "";
+const char* password = "";
+
+// MQTT Broker(Server) 접속정보
+const char* mqtt_server = "";
+const char* clientName = "";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+unsigned long lastMsg = 0;
+#define MSG_BUFFER_SIZE	(50)
+char msg[MSG_BUFFER_SIZE];
+int value = 0;
+int LED = 14;
+
+void setup_wifi() {
+  delay(10);
+  // We start by connecting to a WiFi network
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);             // Wi-Fi Connected
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("Wi-Fi Connected");
+  Serial.println("IP Address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  // payload 변수의 첫 번째 문자가 1인 경우
+  if ((char)payload[0] == '1') {
+
+    digitalWrite(LED, LOW);       // LED 점등
+  } else {
+    digitalWrite(LED, HIGH);      // LED 소등
+  }
+
+}
+
+void reconnect() {
+  // 다시 연결될 때까지 반복 실행
+  while (!client.connected()) {           // MQTT Broker에 접속이 되지 않으면
+    Serial.print("Attempting MQTT Connection...");  // MQTT에 연결을 시도한다는 메시지 출력
+    // Attempt to connect
+    if (client.connect(clientName)) {     
+      Serial.println("Connected");
+
+      // "outTopic" 토픽이름으로 "hello world" 메시지 발행
+      client.publish("outTopic", "hello world");
+      
+      // "inTopic" 토픽을 구독
+      client.subscribe("inTopic");
+    } else {
+      // MQTT Broker에 연결을 실패하면
+      Serial.print("Failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      
+      delay(5000);       // 5초간 기다렸다가 다시 연결 시도
+    }
+  }
+}
+
+void setup() {
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
+  Serial.begin(115200);
+  setup_wifi();
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);  
+}
+
+void loop() {
+  if (!client.connected()) {
+    // Client가 MQTT Broker에 접속되지 않았으면 다시 접속 시도
+    reconnect();
+  }
+  client.loop();        // MQTT Broker와 연결상태 유지
+
+  unsigned long now = millis();
+  if (now - lastMsg > 2000) {
+    // 2초에 한번씩 실행
+
+    lastMsg = now;
+    ++value;
+    snprintf (msg, MSG_BUFFER_SIZE, "hello world #%ld", value);
+    Serial.print("Publish message: ");
+    Serial.println(msg);
+    client.publish("outTopic", msg);      // "outTopic" 토픽이름으로 메시지 발행
+  }
+}
+
